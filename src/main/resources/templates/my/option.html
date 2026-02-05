@@ -1,0 +1,131 @@
+<div th:replace="~{my/_header.html}"></div>
+            <div class="main-container">
+                <div class="side-menu">
+                    <div class="menu-list">
+                        <ul>
+                            <li><a th:href="@{/my/order}">전체주문내역</a></li>
+                            <li><a th:href="@{/my/point}">포인트내역</a></li>
+                            <li><a th:href="@{/my/coupon}">쿠폰</a></li>
+                            <li><a th:href="@{/my/review}">나의리뷰</a></li>
+                            <li><a th:href="@{/my/qna}">문의하기</a></li>
+                            <li class="active"><a th:href="@{/my/option}">나의설정</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="banner-ad">
+                        <th:block th:each="banner : ${myBanners}">
+                            <a th:href="${banner.link}">
+                                <img th:src="@{'/uploads/banner/' + ${banner.img}}"
+                                     th:alt="${banner.banner_name}"
+                                     class="ad-img"
+                                     th:style="'width:' + ${banner.width} + '; height:' + ${banner.height} + '; background-color:' + ${banner.background_color}"/>
+                            </a>
+                        </th:block>
+                    </div>
+                    <div class="option">
+                        <h4>나의설정</h4>
+                        <form th:action="@{/my/option}" method="post">
+                            <table class="option-table">
+                                <tr>
+                                    <th>사용자 ID</th>
+                                    <td th:text="${maskedUid}"></td>
+                                </tr>
+                                <tr>
+                                    <th>비밀번호</th>
+                                    <td><button class="pass-btn"><a th:href="@{/memder/find/password}">비밀번호수정</a></button></td>
+                                </tr>
+                                <tr>
+                                    <th>이름</th>
+                                    <td th:text="${maskedName}"></td>
+                                </tr>
+                                <tr>
+                                    <th>생년월일</th>
+                                    <td th:text="${userInfo.birth}"></td>
+                                </tr>
+                                <tr>
+                                    <th>Email</th>
+                                    <td>
+                                        <input type="text" name="email1" class="id input-group-email" th:value="${emailId}" disabled>
+                                        @
+                                        <input type="text" name="email2" id="emailDomain" class="domain input-group-email" th:value="${emailDomain}" disabled>
+                                        <select class="input-group-email" id="emailDomainSelect" disabled>
+                                            <option value="naver.com" th:selected="${emailDomain == 'naver.com'}">naver.com</option>
+                                            <option value="hanmail.net" th:selected="${emailDomain == 'hanmail.net'}">hanmail.net</option>
+                                            <option value="daum.net" th:selected="${emailDomain == 'daum.net'}">daum.net</option>
+                                            <option value="gmail.com" th:selected="${emailDomain == 'gmail.com'}">gmail.com</option>
+                                            <option value="" th:selected="${emailDomain != 'naver.com' and emailDomain != 'hanmail.net' and emailDomain != 'daum.net' and emailDomain != 'gmail.com'}">직접입력</option>
+                                        </select>
+                                        <button class="modi-btn" data-target="input-group-email">수정하기</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>휴대폰</th>
+                                    <td>
+                                        <input type="number" name="hp1" class="hpbox input-group-hp" th:value="${hp1}" disabled> -
+                                        <input type="number" name="hp2" class="hpbox input-group-hp" th:value="${hp2}" disabled> -
+                                        <input type="number" name="hp3" class="hpbox input-group-hp" th:value="${hp3}" disabled>
+                                        <button class="modi-btn" data-target="input-group-hp">수정하기</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>주소</th>
+                                    <td>
+                                        <div class="input-row">
+                                            <input type="text" id="zip" name="zip" readonly placeholder="우편번호검색클릭" onclick="postcode()" th:value="${userInfo.zip}"/>
+                                        </div>
+                                        <div class="input-row-long">
+                                            <input type="text" id="addr1" name="addr1" readonly placeholder="기본주소검색" th:value="${userInfo.addr1}"/>
+                                            <input type="text" id="addr2" name="addr2" placeholder="상세주소입력" th:value="${userInfo.addr2}"/>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>탈퇴</th>
+                                    <td>
+                                        <button type="button"
+                                                class="del-btn btn btn-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#confirmDeleteModal">
+                                            탈퇴하기
+                                        </button>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div class="btn-area">
+                                <button class="final-modify-btn" type="submit">수정하기</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<!-- 모달부분 -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="deleteForm" th:action="@{/my/delete}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">회원 탈퇴</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>정말로 저희 서비스를 탈퇴하시겠습니까?</p>
+                    <p class="text-danger">탈퇴 시 모든 정보가 삭제되며, 복구가 불가능합니다.</p>
+                    <div class="mb-3">
+                        <label for="passwordCheck" class="form-label">비밀번호 확인</label>
+                        <input type="password" class="form-control" id="passwordCheck" name="pass" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger">확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

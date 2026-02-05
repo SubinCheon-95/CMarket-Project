@@ -1,0 +1,40 @@
+<footer>
+    <div class="footer-layout">
+        <div class="footer-content">
+            <img th:src="@{'/uploads/logo/' + ${basicData.footer_logo_admin}}" alt="로고">
+            <div class="about-company">
+                <h2 th:inline="text">[[${basicData.trade_name}]]</h2>
+                <h2 th:inline="text">대표이사 [[${basicData.ceo}]]</h2>
+                <h2>|</h2>
+                <h2>사업자등록번호</h2>
+                <h2 th:inline="text">[[${basicData.business_num}]]</h2>
+                <h2>|</h2>
+                <h2>통신판매업신고</h2>
+                <h2 th:inline="text">[[${basicData.communication_num}]]</h2>
+                <h2>|</h2>
+                <h2 th:inline="text">[[${basicData.addr1}]]</h2>
+                <h2 th:inline="text">[[${basicData.addr2}]]</h2>
+            </div>
+            <div class="about-company">
+                <h2>고객센터</h2>
+                <h2>|</h2>
+                <h2 th:inline="text">[[${basicData.hp}]]</h2>
+                <h2 th:inline="text">[[${basicData.work_time}]]</h2>
+
+                <h2>이메일</h2>
+                <h2 th:inline="text">[[${basicData.email}]]</h2>
+
+                <h2>전자금융거래 분쟁담당</h2>
+                <h2 th:inline="text">[[${basicData.transaction}]]</h2>
+            </div>
+            <h2 th:inline="text">[[${basicData.copyright}]]</h2>
+            <h2 th:inline="text">ver.[[${appInfo.appVersion}]]</h2>
+        </div>
+
+    </div>
+
+</footer>
+
+
+</body>
+</html>

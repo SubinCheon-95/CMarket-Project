@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>주문상세</title>
+</head>
+<body>
+<div th:fragment="modal">
+    <div class="modal fade modal-top" id="deliveryModal" tabindex="-1" aria-labelledby="deliveryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deliveryModalLabel">배송상세</h5>
+                    <p class="modal-sm-title"></p>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="order-info">
+                        <div class="table-name">
+                            <h4>상품정보</h4>
+                        </div>
+                        <table class="order-table">
+                            <thead>
+                            <tr>
+                                <th></th>
+                                <th>상품번호</th>
+                                <th>상품명</th>
+                                <th>판매자</th>
+                                <th>가격</th>
+                                <th>할인</th>
+                                <th>수량</th>
+                                <th>배송비</th>
+                                <th>결제금액</th>
+                            </tr>
+                            </thead>
+                            <tbody id="modalProductList">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="deli-info">
+                        <div class="table-name">
+                            <h4>배송정보</h4>
+                        </div>
+                        <table class="deli-table">
+                            <tr>
+                                <th>주문번호</th>
+                                <td id="modalDeliOrderNumber"></td>
+                            </tr>
+                            <tr>
+                                <th>수령인</th>
+                                <td id="modalDeliRecipName"></td>
+                            </tr>
+                            <tr>
+                                <th>연락처</th>
+                                <td id="modalDeliRecipHp"></td>
+                            </tr>
+                            <tr>
+                                <th>배송지 주소</th>
+                                <td colspan="3" id="modalDeliRecipAddr"></td>
+                            </tr>
+                            <tr>
+                            </tr>
+                            <tr>
+                                <th>택배사</th>
+                                <td id="modalDeliCompany"></td>
+                            </tr>
+                            <tr>
+                                <th>송장번호</th>
+                                <td id="modalDeliTracking"></td>
+                            </tr>
+                            <tr>
+                                <th>기타/요청사항</th>
+                                <td colspan="3" id="modalDeliReq"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<div th:replace="~{my/_header.html}"></div>
+<div class="main-container">
+    <div class="side-menu">
+        <div class="menu-list">
+            <ul>
+                <li><a th:href="@{/my/order}">전체주문내역</a></li>
+                <li><a th:href="@{/my/point}">포인트내역</a></li>
+                <li><a th:href="@{/my/coupon}">쿠폰</a></li>
+                <li><a th:href="@{/my/review}">나의리뷰</a></li>
+                <li><a th:href="@{/my/qna}">문의하기</a></li>
+                <li><a th:href="@{/my/option}">나의설정</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="banner-ad">
+            <th:block th:each="banner : ${myBanners}">
+                <a th:href="${banner.link}">
+                    <img th:src="@{'/uploads/banner/' + ${banner.img}}"
+                         th:alt="${banner.banner_name}"
+                         class="ad-img"
+                         th:style="'width:' + ${banner.width} + '; height:' + ${banner.height} + '; background-color:' + ${banner.background_color}"/>
+                </a>
+            </th:block>
+        </div>
+        <div class="order">
+            <div class="content-top">
+                <div class="content-title">
+                    <span>최근구매내역</span>
+                </div>
+                <div class="content-more">
+                    <a th:href="@{/my/order}">더보기&nbsp&nbsp&nbsp></a>
+                </div>
+            </div>
+            <table>
+                <tr>
+                    <th>날짜</th>
+                    <th></th>
+                    <th class="second-th">상품정보</th>
+                    <th>상태</th>
+                    <th>확인/신청</th>
+                </tr>
+                <tr th:each="order : ${recentOrders}">
+                    <td th:text="${order.dateString}"></td>
+                    <td>
+                        <div class="prod-img">
+                            <img th:src="@{${order.encodedImg1}}" alt="상품 이미지"/>
+                        </div>
+                    </td>
+                    <td class="second-td">
+                        <div class="prod-info">
+                            <p><a href="#" class="order-detail-link"
+                                  th:text="'주문번호 : ' + ${order.order_number}"
+                                  th:attr="data-order-number=${order.order_number}"
+                                  data-bs-toggle="modal" data-bs-target="#orderModal"></a>
+                            </p>
+                            <p><a href="#" class="seller-detail-link" th:data-manufacture="${order.manufacture}">
+                                <span th:text="${order.manufacture}">[상호명]</span> </a></p>
+                            <p><a th:href="@{/product/view(prod_number=${order.prod_number})}"
+                                  th:text="${order.prod_name}"></a></p>
+                            <p th:text="'수량 : ' + ${order.piece} + '개'"></p>
+                            <h4 th:text="${order.priceString}"></h4>
+                        </div>
+                    </td>
+                    <td th:switch="${order.stat}">
+                        <span th:case="0" class="status-payment-pending">결제대기</span>
+                        <span th:case="1" class="status-payment-complete">결제완료</span>
+                        <span th:case="2" class="status-preparing-shipment">배송준비</span>
+                        <span th:case="3" class="status-shipping">배송중</span>
+                        <span th:case="4" class="status-delivered">배송완료</span>
+                        <span th:case="5" class="status-order-cancelled">주문취소</span>
+                        <span th:case="6" class="status-return-request">반품요청</span>
+                        <span th:case="7" class="status-exchange-request">교환요청</span>
+                        <span th:case="8" class="status-purchase-confirmed">구매확정</span>
+                        <span th:case="*">알 수 없음</span>
+                    </td>
+                    <td class="status-cell">
+                        <div class="status-actions">
+
+                            <th:block th:if="${order.stat == 4}">
+                                <button class="btn btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmModal"
+                                        th:data-order-number="${order.order_number}">
+                                    구매확정
+                                </button>
+                            </th:block>
+
+                            <th:block th:if="${order.stat == 1 or order.stat == 2}">
+                                <button class="btn btn-danger order-cancel-btn"
+                                        th:data-order-number="${order.order_number}">
+                                    주문취소
+                                </button>
+                            </th:block>
+
+                            <th:block th:if="${order.stat != 5}">
+                                <div class="gap-2">
+                                    <button class="btn btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#reviewModal"
+
+                                            th:data-order-number="${order.order_number}"
+                                            th:data-prod-no="${order.prod_number}"
+                                            th:data-prod-name="${order.prod_name}">
+                                        상품평쓰기
+                                    </button>
+                                    <br>
+                                    <button class="btn btn-light btn-return"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#returnModal"
+                                            th:data-order-number="${order.order_number}"
+                                            th:data-prod-no="${order.prod_number}"
+                                            th:data-prod-name="${order.prod_name}"
+                                            th:data-piece="${order.piece}"
+                                            th:data-date-string="${order.dateString}"
+                                            th:data-encoded-img1="${order.encodedImg1}"
+                                            th:data-price-string="${order.priceString}"
+                                            th:data-manufacture="${order.manufacture}"
+                                            th:data-sale-price-string="${order.salePriceString}"
+                                            th:data-discount-string="${order.discountString}">
+                                        반품신청
+                                    </button>
+                                    <br>
+                                    <button class="btn btn-light btn-exchange"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#exchangeModal"
+                                            th:data-order-number="${order.order_number}"
+                                            th:data-prod-no="${order.prod_number}"
+                                            th:data-prod-name="${order.prod_name}"
+                                            th:data-piece="${order.piece}"
+                                            th:data-date-string="${order.dateString}"
+                                            th:data-encoded-img1="${order.encodedImg1}"
+                                            th:data-price-string="${order.priceString}"
+                                            th:data-manufacture="${order.manufacture}"
+                                            th:data-sale-price-string="${order.salePriceString}"
+                                            th:data-discount-string="${order.discountString}">
+                                        교환신청
+                                    </button>
+                                    <br>
+                                </div>
+                            </th:block>
+
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="point">
+            <div class="content-top">
+                <div class="content-title">
+                    <span>포인트적립내역</span>
+                </div>
+                <div class="content-more">
+                    <a th:href="@{/my/point}">더보기&nbsp&nbsp&nbsp></a>
+                </div>
+            </div>
+            <table>
+                <tr>
+                    <th>날짜</th>
+                    <th>구분</th>
+                    <th>주문번호</th>
+                    <th>적립금액</th>
+                    <th>비고</th>
+                    <th>유효기간</th>
+                </tr>
+                <tr th:each="point : ${recentPoints}">
+                    <td th:text="${#temporals.format(point.created_at, 'yyyy-MM-dd')}"></td>
+                    <td th:switch="${point.point_type}">
+                        <span th:case="1">적립</span>
+                        <span th:case="2">사용</span>
+                        <span th:case="3">취소</span>
+                        <span th:case="*">N/A</span> </td>
+                    <td th:text="${point.order_number}"></td>
+                    <td th:text="${point.point_amount}"></td>
+                    <td th:text="${point.description}"></td>
+                    <td th:text="${#temporals.format(point.expiry_date, 'yyyy-MM-dd')}"></td>
+                </tr>
+            </table>
+        </div>
+        <div class="review">
+            <div class="content-top">
+                <div class="content-title">
+                    <span>상품평</span>
+                </div>
+                <div class="content-more">
+                    <a th:href="@{/my/review}">더보기&nbsp&nbsp&nbsp></a>
+                </div>
+            </div>
+            <table>
+                <tr>
+                    <th>번호</th>
+                    <th>상품명</th>
+                    <th>내용</th>
+                    <th>평점</th>
+                    <th>작성일</th>
+                </tr>
+                <tr th:each="review : ${recentReviews}">
+                    <td th:text="${review.review_no}"></td>
+                    <td th:text="${review.prod_number} +'/'+ ${review.prod_name}"></td>
+                    <td>
+                        <span th:text="${#strings.length(review.content) > 20 ?
+                             #strings.substring(review.content, 0, 20) + '...' :
+                             review.content}"></span>
+                    </td>
+                    <td class="rating-stars">
+                        <span class="active-star"
+                              th:each="i : ${#numbers.sequence(1, review.rating)}"
+                              th:text="'★'">
+                        </span>
+
+                        <th:block th:with="emptyStars = 5 - ${review.rating}">
+                            <span class="inactive-star"
+                                  th:if="${emptyStars > 0}"
+                                  th:each="i : ${#numbers.sequence(1, emptyStars)}"
+                                  th:text="'☆'">
+                            </span>
+                        </th:block>
+                    </td>
+                    <td th:text="${#temporals.format(review.r_date, 'yy-MM-dd')}"></td>
+                </tr>
+                <tr th:if="${recentReviews.isEmpty()}">
+                    <td colspan="4" class="no-data">최근 작성된 리뷰가 없습니다.</td>
+                </tr>
+            </table>
+        </div>
+        <div class="qna">
+            <div class="content-top">
+                <div class="content-title">
+                    <span>문의내역</span>
+                </div>
+                <div class="content-more">
+                    <a th:href="@{/my/qna}">더보기&nbsp&nbsp&nbsp></a>
+                </div>
+            </div>
+            <table>
+                <tr>
+                    <th>번호</th>
+                    <th>문의채널</th>
+                    <th>문의유형</th>
+                    <th>제목</th>
+                    <th>작성일</th>
+                    <th>상태</th>
+                </tr>
+                <tr th:each="qna : ${recentQnas}">
+                    <td th:text="${qna.id}"></td>
+                    <td>고객센터</td>
+                    <td th:text="${qna.type1}"></td>
+                    <td th:text="${qna.title}"></td>
+                    <td th:text="${#temporals.format(qna.reg_date, 'yyyy-MM-dd')}"></td>
+                    <td th:text="${qna.status == 'waiting'} ? '검토중' : (${qna.status == 'complete'} ? '답변완료' : ${qna.status})"
+                        th:classappend="${qna.status == 'complete'} ? 'status-complete' : ''">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="option">
+            <div class="content-top">
+                <div class="content-title">
+                    <span>나의설정</span>
+                </div>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <span class="setting-title">기본배송지 설정</span>
+                        <a th:href="@{/my/option}" class="edit-link">변경</a>
+                    </div>
+                    <div class="setting-content">
+                        <div class="setting-address" th:text="${userOptions.addr1}"></div>
+                        <div class="setting-address" th:text="${userOptions.addr2}"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <span class="setting-title">Email 설정</span>
+                        <a th:href="@{/my/option}" class="edit-link">변경</a>
+                    </div>
+                    <div class="setting-content">
+                        <div class="setting-email" th:text="${userOptions.email}"></div>
+                        <div class="setting-date" th:text="'(최종수정일'+${userOptions.updated_at}+')'"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <span class="setting-title">휴대폰 설정</span>
+                        <a th:href="@{/my/option}" class="edit-link">변경</a>
+                    </div>
+                    <div class="setting-content">
+                        <div class="setting-phone" th:text="${userOptions.hp}"></div>
+                        <div class="setting-date" th:text="'(최종수정일 '+${userOptions.updated_at}+')'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</main>
+<div th:insert="~{my/modal/order-modal :: modal}"></div>
+<div th:insert="~{my/modal/seller-modal :: modal}"></div>
+<div th:insert="~{my/modal/qna-modal :: modal}"></div>
+<div th:insert="~{my/modal/confirm-modal :: modal}"></div>
+<div th:insert="~{my/modal/review-modal :: modal}"></div>
+<div th:insert="~{my/modal/return-modal :: modal}"></div>
+<div th:insert="~{my/modal/exchange-modal :: modal}"></div>
+<div th:replace="~{_footer :: footerFragment}"></div>
+</body>
+</html>

@@ -1,0 +1,191 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.content-section{
+    min-width: 878px;
+    max-width: 884.08px;
+}
+
+.board {
+    width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: stretch;
+    gap: 30px;
+    min-height: 100vh;
+}
+
+main {
+    display: flex;
+    align-items: stretch;
+}
+
+a:hover{
+    cursor: pointer;
+}
+
+.content-title {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.title-items {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #cfcfcf;
+}
+
+.item1 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.item2 {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.title-items h6 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.search{
+    width: 100%;
+    margin: 20px 0;
+}
+
+.main-content{
+    width: 100%;
+}
+
+.orders-table{
+    width: 100%;
+    border-top: 1.5px solid #a6a6a6;
+}
+
+.orders-table a{
+    text-decoration: underline !important;
+    color: black;
+}
+
+.orders-table th{
+    border-bottom: 0.5px solid #a6a6a6;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 15px;
+    white-space: nowrap;
+}
+
+.orders-table td{
+    border-bottom: 0.5px solid #a6a6a6;
+    font-size: 12px;
+    font-weight: 400;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.btn-white{
+    border: 1px solid #0070C0;
+    color: #0070C0;
+    font-size: 14px;
+    font-weight: 400;
+    width: 59px;
+    height: 33px;
+    padding: 0;
+}
+
+.bottom-section {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-top: 50px;
+    gap:24px;
+}
+
+.pagination > .prev,
+.pagination > .pagenumber,
+.pagination > .last{
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+
+
+.pagination .pagenumber a{
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    width:32px;
+    height:29px;
+    color:#666;
+    text-decoration:none;
+    box-sizing:border-box;
+    line-height:1;
+    font-weight: 350;
+    font-size: 15px;
+}
+
+
+.pagination .pagenumber a.active{
+    color:#436CFF;
+}
+
+.pagination .prev a,
+.pagination .last a{
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    width:32px;
+    height:32px;
+}
+.pagination a.paging img{
+    display:block;
+    max-width:18px;
+    max-height:18px;
+}
+
+.disabled {
+    opacity: 0;
+    pointer-events: none;   /* 클릭 금지 */
+    cursor: default;
+}
+
+.status-complete {
+    color: #4CAF50 !important;
+    font-weight: bold !important;
+}
+
+.status-payment-pending { color: #92D050; font-weight: bold; }    /* 결제대기 */
+.status-payment-complete { color: #0047AB; font-weight: bold; }  /* 결제완료 */
+.status-preparing-shipment { color: #0070C0; font-weight: bold; } /* 배송준비 */
+.status-shipping { color: #FFA500; font-weight: bold; }          /* 배송중 */
+.status-delivered { color: #228B22; font-weight: bold; }         /* 배송완료 */
+.status-order-cancelled { color: #FF0000; font-weight: bold; }   /* 주문취소 */
+.status-return-request { color: #FF0000; font-weight: bold; }    /* 반품요청 */
+.status-exchange-request { color: #FF8C00; font-weight: bold; }  /* 교환요청 */
+.status-purchase-confirmed {color: #6f42c1; font-weight: bold; } /* 구매확정 */

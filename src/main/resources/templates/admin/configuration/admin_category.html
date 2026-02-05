@@ -1,0 +1,414 @@
+<html xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" th:href="@{/images/member/favicon.png}">
+    <title>[[${basicData.title}]]-[[${basicData.sub_title}]]::관리자 환경설정 [[${appInfo.appVersion}]]</title>
+    <link rel="stylesheet" th:href="@{/css/admin/main/header_footer.css}">
+    <link rel="stylesheet" th:href="@{/css/admin/configuration/category.css}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            // 기존 이벤트 바인딩 코드 ...
+
+            // ----------------------
+            // 1차 카테고리 드래그
+            // ----------------------
+            const firstCategoryContainer = document.querySelector(".category_option_input");
+            const sortableFirst = new Sortable(firstCategoryContainer, {
+                animation: 150,
+                handle: ".menu-header", // 드래그 가능한 영역
+                ghostClass: "sortable-ghost",
+                filter: ".first_add", // 1차 추가 버튼은 드래그 불가
+                onEnd: function(evt) {
+                    updateOrderData();
+                }
+            });
+
+            // ----------------------
+            // 2차 카테고리 드래그
+            // ----------------------
+            const allSubmenus = document.querySelectorAll(".submenu");
+            allSubmenus.forEach(submenu => {
+                new Sortable(submenu, {
+                    animation: 150,
+                    handle: ".submenu-item",
+                    ghostClass: "sortable-ghost",
+                    filter: ".second_add",
+                    onEnd: function(evt) {
+                        updateOrderData();
+                    }
+                });
+            });
+
+            // ----------------------
+            // 순서 데이터 생성
+            // ----------------------
+            function updateOrderData() {
+                const orderData = [];
+                const topMenus = document.querySelectorAll(".menu-item");
+                topMenus.forEach((menu, index) => {
+                    const cate_cd = menu.getAttribute("data-cate-cd");
+                    if(!cate_cd) return;
+                    orderData.push({ cate_cd: cate_cd, cate_order: index + 1 });
+
+                    // 2차 카테고리
+                    const subs = menu.querySelectorAll(".submenu-item");
+                    subs.forEach((sub, subIndex) => {
+                        const sub_cd = sub.getAttribute("data-cate-cd");
+                        if(!sub_cd) return;
+                        orderData.push({ cate_cd: sub_cd, cate_order: subIndex + 1 });
+                    });
+                });
+
+                document.getElementById("orderData").value = JSON.stringify(orderData);
+            }
+
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const menuHeaders = document.querySelectorAll(".menu-header");
+
+            // ----------------------
+            // 카테고리 토글
+            // ----------------------
+            function bindToggleEvent(header) {
+                header.addEventListener("click", function(e) {
+                    // 삭제 버튼 클릭 시 토글 막기
+                    if(e.target.classList.contains("delete-btn")) return;
+
+                    const submenu = this.nextElementSibling;
+                    const arrow = this.querySelector(".arrow");
+
+                    if(submenu) submenu.classList.toggle("open");
+                    if(arrow) arrow.classList.toggle("open");
+                });
+            }
+
+            menuHeaders.forEach(bindToggleEvent);
+
+            // ----------------------
+            // 삭제 이벤트 바인딩
+            // ----------------------
+            let deletedCateCdList = [];
+
+            function bindDeleteEvents(element) {
+                const deleteBtns = element.querySelectorAll(".delete-btn");
+                deleteBtns.forEach(btn => {
+                    btn.onclick = function(event) {
+                        event.stopPropagation();
+
+                        // 삭제 확인 메시지
+                        if (!confirm("정말로 삭제하시겠습니까?")) {
+                            return; // 취소 시 삭제하지 않음
+                        }
+
+                        const parent = btn.closest(".submenu-item") || btn.closest(".menu-item");
+                        if (parent) {
+                            const cateCd = parent.getAttribute("data-cate-cd");
+                            if (cateCd) deletedCateCdList.push(cateCd);
+                            parent.remove();
+                        }
+
+                        document.getElementById("deletedCateCd").value = deletedCateCdList.join(",");
+                    };
+                });
+            }
+            bindDeleteEvents(document);
+
+            // ----------------------
+            // 2차 카테고리 추가
+            // ----------------------
+            function bindSecondCategoryAdd(menuItem) {
+                const secondAddBtns = menuItem.querySelectorAll(".second_add");
+                secondAddBtns.forEach(btn => {
+                    btn.onclick = secondCategoryHandler;
+                });
+            }
+
+            function secondCategoryHandler(event) {
+                event.stopPropagation(); // 토글 막기
+
+                const parentMenu = this.closest(".menu-item");
+                const parentCateCd = parentMenu.getAttribute("data-cate-cd");
+
+                if(!parentCateCd) {
+                    alert("먼저 1차 카테고리를 서버에 저장해야 2차 카테고리를 추가할 수 있습니다.");
+                    return;
+                }
+
+                const name = prompt("2차 카테고리 이름을 입력해주세요:");
+                if(!name) return;
+
+                const submenu = this.closest(".submenu");
+                const newSubItem = document.createElement("div");
+                newSubItem.className = "submenu-item";
+                newSubItem.innerHTML = `
+                    ${name}&nbsp;&nbsp;
+                    <input type="hidden" name="cate_name" value="${name}">
+                    <input type="hidden" name="up_cate_cd" value="${parentCateCd}">
+                    <button type="button" class="delete-btn">삭제</button>
+                `;
+
+                submenu.insertBefore(newSubItem, this);
+                bindDeleteEvents(newSubItem);
+            }
+
+            // ----------------------
+            // 1차 카테고리 추가
+            // ----------------------
+            const firstAddBtn = document.querySelector(".first_add");
+            firstAddBtn.addEventListener("click", function() {
+                const container = document.querySelector(".category_option_input");
+                const addItem = firstAddBtn.closest(".menu-item");
+
+                const name = prompt("1차 카테고리 이름을 입력해주세요:");
+                if(!name) return;
+
+                const newMenu = document.createElement("div");
+                newMenu.className = "menu-item";
+                newMenu.setAttribute("data-cate-cd", ""); // 서버 저장 후 채우기
+                newMenu.innerHTML = `
+            <div class="menu-header">
+                <div class="menu-header-left">
+                    <span class="arrow open">▶</span>
+                    <span class="menu-title">${name}</span>
+                    <input type="hidden" name="cate_name" value="${name}">
+                </div>
+                <button type="button" class="delete-btn">삭제</button>
+            </div>
+            <div class="submenu">
+                <div class="add-item second_add">
+                    <div class="add-btn">+</div>
+                    <span>2차 카테고리추가</span>
+                </div>
+            </div>
+        `;
+                container.insertBefore(newMenu, addItem);
+
+                // 이벤트 재바인딩
+                const header = newMenu.querySelector(".menu-header");
+                bindToggleEvent(header);
+                bindDeleteEvents(newMenu);
+                bindSecondCategoryAdd(newMenu);
+            });
+
+            // 초기 2차 카테고리 버튼 바인딩
+            const allMenuItems = document.querySelectorAll(".menu-item");
+            allMenuItems.forEach(bindSecondCategoryAdd);
+
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script th:src="@{/js/admin/cs/recruit/sidebarAction.js}" defer></script>
+    <link rel="stylesheet" th:href="@{/css/admin/main/sidebar.css}">
+</head>
+<body>
+    <header>
+        <div class="header-layout">
+            <div class="header-content">
+                <a th:href="@{/admin}">
+                    <img th:src="@{'/uploads/logo/' + ${basicData.header_logo_admin}}" alt="로고">
+                </a>
+
+                <div class="header-link">
+                    <div class="header-item">
+                        <a th:href="@{/}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                            <p>HOME</p>
+                        </a>
+                    </div>
+
+                    <div class="header-item">
+                        <a th:href="@{/cs/index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-headset-icon lucide-headset"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>
+                            <p>고객센터</p>
+                        </a>
+                    </div>
+
+                    <!-- 로그인 했을 경우 관리자 접속 가능 head 맨위에 sec 관련 태그 추가하기 -->
+                    <form th:action="@{/member/logout}" method="post" sec:authorize="isAuthenticated()">
+                        <button type="submit">로그아웃</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <aside class="sidebar">
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+                        <p>환경설정</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/config/basic}" class="sub-link">기본설정</a></li>
+                        <li><a th:href="@{/admin/config/banner}" class="sub-link">배너관리</a></li>
+                        <li><a th:href="@{/admin/config/policy}" class="sub-link">약관관리</a></li>
+                        <li><a th:href="@{/admin/config/category}" class="sub-link">카테고리</a></li>
+                        <li><a th:href="@{/admin/config/version}" class="sub-link">버전관리</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store-icon lucide-store"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></svg>
+                        <p>상점관리</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/shop/list}" class="sub-link">상점목록</a></li>
+                        <li><a th:href="@{/admin/shop/sales}" class="sub-link">매출현황</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-pen-icon lucide-user-pen"><path d="M11.5 15H7a4 4 0 0 0-4 4v2"/><path d="M21.378 16.626a1 1 0 0 0-3.004-3.004l-4.01 4.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/><circle cx="10" cy="7" r="4"/></svg>
+                        <p>회원관리</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/member/list}" class="sub-link">회원목록</a></li>
+                        <li><a th:href="@{/admin/member/point}" class="sub-link">포인트관리</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package-open-icon lucide-package-open"><path d="M12 22v-9"/><path d="M15.17 2.21a1.67 1.67 0 0 1 1.63 0L21 4.57a1.93 1.93 0 0 1 0 3.36L8.82 14.79a1.655 1.655 0 0 1-1.64 0L3 12.43a1.93 1.93 0 0 1 0-3.36z"/><path d="M20 13v3.87a2.06 2.06 0 0 1-1.11 1.83l-6 3.08a1.93 1.93 0 0 1-1.78 0l-6-3.08A2.06 2.06 0 0 1 4 16.87V13"/><path d="M21 12.43a1.93 1.93 0 0 0 0-3.36L8.83 2.2a1.64 1.64 0 0 0-1.63 0L3 4.57a1.93 1.93 0 0 0 0 3.36l12.18 6.86a1.636 1.636 0 0 0 1.63 0z"/></svg>
+                        <p>상품관리</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/product/list}" class="sub-link">상품목록</a></li>
+                        <li><a th:href="@{/admin/product/register}" class="sub-link">상품등록</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text-icon lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+                        <p>주문관리</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/order/list}" class="sub-link">주문현황</a></li>
+                        <li><a th:href="@{/admin/order/delivery}" class="sub-link">배송현황</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ticket-percent-icon lucide-ticket-percent"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M9 9h.01"/><path d="m15 9-6 6"/><path d="M15 15h.01"/></svg>
+                        <p>쿠폰관리</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/coupon/list}" class="sub-link">쿠폰목록</a></li>
+                        <li><a th:href="@{/admin/coupon/issued}" class="sub-link">쿠폰발급현황</a></li>
+                    </ul>
+                </div>
+                <div class="side-item">
+                    <div class="main-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-laptop-minimal-check-icon lucide-laptop-minimal-check"><path d="M2 20h20"/><path d="m9 10 2 2 4-4"/><rect x="3" y="4" width="18" height="12" rx="2"/></svg>
+                        <p>고객센터</p>
+                    </div>
+                    <ul class="sub-menu">
+                        <li><a th:href="@{/admin/cs/notice/list}" class="sub-link">공지사항</a></li>
+                        <li><a th:href="@{/admin/cs/faq/list}" class="sub-link">자주묻는질문</a></li>
+                        <li><a th:href="@{/admin/cs/qna/list}" class="sub-link">문의하기</a></li>
+                        <li><a th:href="@{/admin/cs/recruit/list}" class="sub-link">채용하기</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <div class="content">
+                <div class="content-header">
+                    <h1 class="top-title">카테고리</h1>
+                    <div>
+                        <span>HOME</span> &nbsp;&gt;&nbsp;
+                        <span>환경설정</span> &nbsp;&gt;&nbsp;
+                        <span style="font-weight: bold;">카테고리</span>
+                    </div>
+                </div>
+
+                <form th:action="@{/admin/config/category/update}" method="post">
+                    <input type="hidden" id="deletedCateCd" name="deletedCateCd">
+                    <input type="hidden" id="orderData" name="orderData">
+                    <div id="category_box">
+                        <div style="margin-top: 10px;">
+                            <h4>카테고리 관리</h4>
+                            <p class="title_p">쇼핑몰 메인, 상품 페이지 사이드 카테고리 메뉴 입니다.</p>
+                        </div>
+
+                        <div class="category_option_input">
+                            <div th:each="top : ${topCategories}" class="menu-item" th:attr="data-cate-cd=${top.cate_cd}">
+                                <div class="menu-header">
+                                    <div class="menu-header-left">
+                                        <span class="arrow open">▶</span>
+                                        <span class="menu-title" th:text="${top.cate_name}"></span>
+                                    </div>
+                                    <button type="button" class="delete-btn">삭제</button>
+                                </div>
+
+                                <div class="submenu">
+                                    <div th:each="sub : ${grouped[top.cate_cd]}" class="submenu-item" th:attr="data-cate-cd=${sub.cate_cd}">
+                                        <span th:text="${sub.cate_name}"></span>
+                                        <button type="button" class="delete-btn">삭제</button>
+                                    </div>
+
+                                    <div class="add-item second_add">
+                                        <div class="add-btn">+</div>
+                                        <span>2차 카테고리추가</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-item">
+                                <div class="add-item first_add" style="padding-left: 20px; cursor: pointer;">
+                                    <div class="add-btn">+</div>
+                                    <span>1 차카테고리추가</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="bottom_p">카테고리 메뉴 순서를 변경할 때 드래그 앤 드롭으로 1차, 2차 카테고리 메뉴 이동 후 수정하기를 클릭합니다.</p>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <input type="submit" value="수정하기" class="modify_btn">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-layout">
+            <div class="footer-content">
+                <img th:src="@{'/uploads/logo/' + ${basicData.footer_logo_admin}}" alt="로고">
+                <div class="about-company">
+                    <h2 th:inline="text">[[${basicData.trade_name}]]</h2>
+                    <h2 th:inline="text">대표이사 [[${basicData.ceo}]]</h2>
+                    <h2>|</h2>
+                    <h2>사업자등록번호</h2>
+                    <h2 th:inline="text">[[${basicData.business_num}]]</h2>
+                    <h2>|</h2>
+                    <h2>통신판매업신고</h2>
+                    <h2 th:inline="text">[[${basicData.communication_num}]]</h2>
+                    <h2>|</h2>
+                    <h2 th:inline="text">[[${basicData.addr1}]]</h2>
+                    <h2 th:inline="text">[[${basicData.addr2}]]</h2>
+                </div>
+                <div class="about-company">
+                    <h2>고객센터</h2>
+                    <h2>|</h2>
+                    <h2 th:inline="text">[[${basicData.hp}]]</h2>
+                    <h2 th:inline="text">[[${basicData.work_time}]]</h2>
+
+                    <h2>이메일</h2>
+                    <h2 th:inline="text">[[${basicData.email}]]</h2>
+
+                    <h2>전자금융거래 분쟁담당</h2>
+                    <h2 th:inline="text">[[${basicData.transaction}]]</h2>
+                </div>
+                <h2 th:inline="text">[[${basicData.copyright}]]</h2>
+                <h2 th:inline="text">ver.[[${appInfo.appVersion}]]</h2>
+            </div>
+
+        </div>
+
+    </footer>
+</body>
+</html>

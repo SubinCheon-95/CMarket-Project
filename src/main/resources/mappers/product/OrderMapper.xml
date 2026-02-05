@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.kmarket.mapper.OrderMapper">
+
+    <!-- OrderMapper.xml -->
+    <resultMap id="OrderMap" type="kr.co.kmarket.dto.OrderDTO">
+        <result column="cust_number"        property="cust_number"/>
+        <result column="order_number"       property="order_number"/>
+        <result column="name"               property="name"/>
+        <result column="hp"                 property="hp"/>
+        <result column="zip"                property="zip"/>
+        <result column="addr"               property="addr"/>
+        <result column="addr2"              property="addr2"/>
+        <result column="req"                property="req"/>
+        <result column="delivery"           property="delivery"/>
+        <result column="payment"            property="payment"/>
+        <result column="piece"              property="piece"/>
+        <result column="price"              property="price"/>
+        <result column="use_point"          property="usePoint"/>
+
+        <result column="o_date"             property="oDate"/>
+        <result column="stat"               property="stat"/>
+        <result column="etc"                property="etc"/>
+        <result column="exchange"           property="exchange"/>
+        <result column="exchange_reason"    property="exchange_reason"/>
+
+        <result column="img_1"              property="img1"/>
+        <result column="manufacture"        property="manufacture"/>
+        <result column="prod_name"          property="prod_name"/>
+        <result column="prod_number"        property="prod_number"/>
+        <result column="discount"           property="discount"/>
+        <result column="sale_price"         property="salePrice"/>
+
+        <result column="custid"             property="custId"/>
+        <result column="ord_name"           property="ordName"/>
+        <result column="ord_hp"             property="ordHp"/>
+        <result column="delivery_company"   property="deliveryCompany"/>
+        <result column="tracking_number"    property="trackingNumber"/>
+    </resultMap>
+
+    <!-- ===================== -->
+    <!-- ✅ 주문 등록 -->
+    <!-- ===================== -->
+    <insert id="insertOrder" parameterType="kr.co.kmarket.dto.OrderDTO">
+        <selectKey keyProperty="order_number" resultType="string" order="BEFORE">
+            SELECT 'ORD' || LPAD(ORDER_SEQ.NEXTVAL, 8, '0') FROM DUAL
+        </selectKey>
+
+        INSERT INTO "ORDER" (
+            ORDER_NUMBER, CUST_NUMBER, NAME, HP, ZIP, ADDR, ADDR2, REQ,
+            PRICE, DELIVERY, SALEPRICE, USE_POINT, PAYMENT, O_DATE, STAT
+        ) VALUES (
+            #{order_number}, #{cust_number}, #{name}, #{hp}, #{zip}, #{addr}, #{addr2}, #{req},
+            #{price, jdbcType=NUMERIC}, #{delivery, jdbcType=NUMERIC}, #{salePrice, jdbcType=NUMERIC},
+            #{usePoint, jdbcType=NUMERIC}, #{payment, jdbcType=NUMERIC}, SYSDATE, 1
+        )
+    </insert>
+
+    <!-- ===================== -->
+    <!-- ✅ 주문 상세 등록 -->
+    <!-- ===================== -->
+    <insert id="insertOrderDetail">
+        INSERT INTO ORDERDETAIL (ORDER_NUMBER, PROD_NUMBER, PIECE, PRICE)
+        VALUES (#{order_number}, #{prod_number}, #{piece}, #{price})
+    </insert>
+
+
+    <!-- ===================== -->
+    <!-- ✅ 주문 단건 조회 -->
+    <!-- ===================== -->
+    <select id="selectOrderByNumber" parameterType="string" resultType="kr.co.kmarket.dto.OrderDTO">
+        SELECT
+            ORDER_NUMBER AS order_number,
+            CUST_NUMBER  AS cust_number,
+            NAME         AS name,
+            HP           AS hp,
+            ZIP          AS zip,
+            ADDR         AS addr,
+            ADDR2        AS addr2,
+            REQ          AS req,
+            PRICE        AS price,
+            DELIVERY     AS delivery,
+            SALEPRICE    AS salePrice,
+            USE_POINT    AS usePoint,
+            PAYMENT      AS payment,
+            O_DATE       AS oDate,
+            STAT         AS stat
+        FROM "ORDER"
+        WHERE ORDER_NUMBER = #{order_number}
+    </select>
+
+    <!-- ===================== -->
+    <!-- ✅ 주문 상세 목록 조회 -->
+    <!-- ===================== -->
+    <select id="selectOrderDetails" resultType="kr.co.kmarket.dto.OrderDTO">
+        SELECT
+            p.PROD_NUMBER,
+            p.PROD_NAME,
+            p.MANUFACTURE,
+            p.IMG_1 AS img1,
+            p.PRICE AS price,          -- 정상가
+            p.SALEPRICE AS salePrice,  -- 할인가
+            p.DISCOUNT,
+            d.PIECE AS piece,
+            o.DELIVERY
+        FROM ORDERDETAIL d
+                 JOIN PRODUCT p ON d.PROD_NUMBER = p.PROD_NUMBER
+                 JOIN "ORDER" o ON d.ORDER_NUMBER = o.ORDER_NUMBER
+        WHERE d.ORDER_NUMBER = #{order_number}
+    </select>
+
+
+    <!-- ===================== -->
+    <!-- ✅ 장바구니 목록 -->
+    <!-- ===================== -->
+    <select id="selectCartList" resultType="kr.co.kmarket.dto.CartDTO">
+        SELECT *
+        FROM CART
+        WHERE CART_NUMBER IN
+        <foreach item="num" collection="cart_numbers" open="(" separator="," close=")">
+            #{num}
+        </foreach>
+    </select>
+
+    <!-- ===================== -->
+    <!-- ✅ 사용 가능한 쿠폰 -->
+    <!-- ===================== -->
+    <select id="selectAvailableCoupons" parameterType="int" resultType="kr.co.kmarket.dto.CouponDTO">
+        SELECT
+            c.COUPON_NO    AS couponNo,
+            c.COUPON_NAME  AS couponName,
+            c.BENEFIT      AS benefit,
+            c.USE_PERIOD   AS usePeriod,
+            c.ISSUE_DATE   AS issueDate,
+            c.STATUS       AS status
+        FROM COUPON c
+        WHERE c.CUST_NUMBER = #{cust_number}
+          AND c.STATUS = '미사용'
+          AND c.USE_PERIOD >= SYSDATE
+        ORDER BY c.ISSUE_DATE DESC
+    </select>
+
+    <!-- ===================== -->
+    <!-- ✅ 회원 포인트 -->
+    <!-- ===================== -->
+    <select id="selectUserPoint" parameterType="int" resultType="int">
+        SELECT NVL(SUM(POINT_AMOUNT), 0)
+        FROM POINT
+        WHERE CUST_NUMBER = #{cust_number}
+          AND (EXPIRE_DATE IS NULL OR EXPIRE_DATE > SYSDATE)
+    </select>
+
+    <!-- ===================== -->
+    <!-- ✅ 포인트 내역 등록 -->
+    <!-- ===================== -->
+    <insert id="insertPoint" parameterType="kr.co.kmarket.dto.PointDTO">
+        INSERT INTO POINT (
+            POINT_ID, CUST_NUMBER, ORDER_NUMBER, POINT_TYPE,
+            POINT_AMOUNT, DESCRIPTION, CREATED_AT
+        )
+        VALUES (
+                   POINT_SEQ.NEXTVAL,
+                   #{cust_number},
+                   #{order_number},
+                   #{point_type},
+                   #{point_amount},
+                   #{description},
+                   SYSDATE
+               )
+    </insert>
+
+    <!-- ===================== -->
+    <!-- ✅ 장바구니 번호로 상세 조회 -->
+    <!-- ===================== -->
+    <select id="selectCartItemsByNumbers" resultType="kr.co.kmarket.dto.CartDTO">
+        SELECT
+        c.CART_NUMBER,
+        c.CUST_NUMBER,
+        c.PROD_NUMBER,
+        c.QUANTITY,  <!-- ✅ 이게 있어야 함 -->
+        p.PROD_NAME,
+        p.PRICE,
+        p.DISCOUNT,
+        p.IMG_1,
+        o.OPT_NAME,
+        o.OPT_PRICE
+        FROM CART c
+        JOIN PRODUCT p ON c.PROD_NUMBER = p.PROD_NUMBER
+        LEFT JOIN PRODUCT_OPTION o ON p.PROD_NUMBER = o.PROD_NUMBER
+        WHERE c.CART_NUMBER IN
+        <foreach collection="array" item="num" open="(" separator="," close=")">
+            #{num}
+        </foreach>
+    </select>
+
+
+    <select id="selectOrder" resultMap="OrderMap">
+        SELECT
+            o.cust_number, o.order_number, o.name, o.hp, o.zip, o.addr, o.addr2, o.req, o.delivery,
+            o.payment, o.piece, o.price, o.use_point,
+            o.o_date, o.stat, o.etc, o.exchange, o.exchange_reason,
+            p.img_1, p.manufacture, p.prod_name, p.prod_number, p.discount, p.sale_price,
+            m.custid, m.name AS ord_name, m.hp AS ord_hp,
+            s.delivery_company, s.tracking_number
+        FROM orders o
+                 JOIN member m ON m.cust_number = o.cust_number
+                 JOIN order_item oi ON oi.order_number = o.order_number
+                 JOIN product p ON p.prod_number = oi.prod_number
+                 LEFT JOIN shipment s ON s.order_number = o.order_number
+        WHERE o.order_number = #{orderNumber}
+    </select>
+
+    <!-- 주문 완료 페이지용 데이터 조회 -->
+    <!-- ===================== -->
+    <!-- ✅ 주문 완료 페이지용 데이터 조회 (최종 버전) -->
+    <!-- ===================== -->
+    <select id="selectOrderComplete" parameterType="string" resultType="kr.co.kmarket.dto.OrderDTO">
+        SELECT
+            o.ORDER_NUMBER       AS order_number,
+            o.NAME               AS name,
+            o.HP                 AS hp,
+            o.ADDR               AS addr,
+            o.ADDR2              AS addr2,
+            o.DELIVERY           AS delivery,
+            o.PRICE              AS price,
+            o.USE_POINT          AS usePoint,
+            o.PAYMENT            AS payment,
+
+            -- 🔹 포인트 관련 정보
+            NVL(SUM(CASE WHEN p.POINT_TYPE = 1 THEN p.POINT_AMOUNT END), 0) AS savePoint,  -- 적립 포인트 합계
+            NVL(SUM(CASE WHEN p.POINT_TYPE = 2 THEN p.POINT_AMOUNT END), 0) AS usedPoint,  -- 사용 포인트 합계
+            MAX(p.POINT_TYPE)       AS pointType,       -- 최근 포인트 유형 (1: 적립, 2: 사용)
+            MAX(p.POINT_AMOUNT)     AS pointAmount,     -- 최근 포인트 금액
+            MAX(p.DESCRIPTION)      AS description      -- 포인트 설명
+        FROM
+            ORDER o
+                LEFT JOIN POINT p ON o.ORDER_NUMBER = p.ORDER_NUMBER
+        WHERE
+            o.ORDER_NUMBER = #{order_number}
+        GROUP BY
+            o.ORDER_NUMBER, o.NAME, o.HP, o.ADDR, o.ADDR2,
+            o.DELIVERY, o.PRICE, o.USE_POINT, o.PAYMENT
+    </select>
+
+
+</mapper>
